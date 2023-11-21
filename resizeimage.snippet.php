@@ -10,11 +10,11 @@ $sizes = $modx->getOption("options", $scriptProperties, "");
 $quality = $modx->getOption("quality", $scriptProperties, 70);
 $fileExtension = $modx->getOption("fileExtension", $scriptProperties, "webp");
 $setRatio = $modx->getOption("setRatio", $scriptProperties, true);
+$cachePath = $modx->getOption("cachePath", $scriptProperties, "assets/image-cache/");
 $cultureKey = $modx->getOption("cultureKey");
 $basePath = $modx->getOption("base_path");
 $filePath = preg_replace("/^\/?" . $cultureKey . "\//i", "", $input);
 $filePathLast = $filePath;
-$cachePath = $modx->getOption("cachePath", $scriptProperties, "assets/image-cache/");
 $srcsets = [];
 $src = [];
 
