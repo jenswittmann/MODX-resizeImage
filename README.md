@@ -41,14 +41,17 @@ Generates this:
 ### Lazyload base64 Placeholder
 
 ```
-[[!resizeImage?
-    &input=`[[+url]]`
-    &options=`100`
-    &lib=`cli`                    
-    &libPath=`[[++ffmpeg.binPath]]`
-    &type=`video`
-    &fileExtension=`png`
-    &mode=`base64` ]]
+<img
+    src[[!resizeImage?
+        &input=`[[+url]]`
+        &options=`100`
+        &lib=`cli`                    
+        &libPath=`[[++ffmpeg.binPath]]`
+        &type=`video`
+        &fileExtension=`png`
+        &mode=`base64` ]]
+    alt=""
+/>
 ```
 
 ## Roadmap
