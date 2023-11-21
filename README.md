@@ -4,7 +4,7 @@ Snippet for resizing Images in MODX. It replaces [pThumb](https://github.com/mod
 
 ✅ Generates WebP  
 ✅ Output srcset and aspect ratio for better web vitals  
-✅ Can use binary libs like `convert` (Imagine workaround on IONOS) and `ffmpeg` (for Videothumbnails)
+✅ Can use binary libs like `convert` (Imagine workaround on IONOS) and `ffmpeg` (for Videothumbnails)  
 ✅ Output as base64 for Lazyloading Placeholders
 
 ## Options
