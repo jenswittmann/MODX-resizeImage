@@ -23,14 +23,19 @@ if (!file_exists($basePath . $filePath)) {
     if ($mode == "json") {
         return "'" . $input . "'";
     }
-    return $input;
+    if (!empty($input)) {
+        return '="' . $input . strlen($input) . '"';
+    }
+    return false;
 }
 
 # loop sizes
 $sizes = explode(",", $sizes);
 natsort($sizes);
 foreach (array_reverse($sizes) as $size) {
-    list($width, $height) = explode("x", $size);
+    $dimensions = explode("x", $size);
+    $width = isset($dimensions[0]) ? $dimensions[0] : "";
+    $height = isset($dimensions[1]) ? $dimensions[1] : "";
     $filePathInfo = pathinfo($filePath);
     $savePathExtension = "." . substr(md5($filePathLast), 0, 8) . "." . $width . "x" . $height . "-" . $quality . "." . $fileExtension;
     $savePath = $cachePath . $filePathInfo["filename"] . $savePathExtension;
@@ -61,7 +66,7 @@ foreach (array_reverse($sizes) as $size) {
             
             if ($type == "video") {
                 
-                $cmd = $libPath . " -ss 00:00:00 -i " . $basePath . $filePathLast . " -filter:v scale=\"" . ( $width ?? "-1" ) . ":" . ( $height ?? "-1" ) . "\" " . $basePath . $savePath;
+                $cmd = $libPath . " -ss 00:00:00 -i '" . $basePath . $filePathLast . "' -filter:v scale=\"" . ( $width ?? "-1" ) . ":" . ( $height ?? "-1" ) . "\" " . $basePath . $savePath;
             
             } else {
             
@@ -72,7 +77,7 @@ foreach (array_reverse($sizes) as $size) {
                 }
                 
                 $cmd = "export OMP_NUM_THREADS=1;"; // bugfixes IONOS resize large images, thanks to https://stackoverflow.com/a/69133237
-                $cmd .= $libPath . " " . $basePath . $filePathLast . " " . $resize . "  -quality " . $quality . " " . $basePath . $savePath;
+                $cmd .= $libPath . " '" . $basePath . $filePathLast . "' " . $resize . "  -quality " . $quality . " '" . $basePath . $savePath . "'";
            
             }
             
