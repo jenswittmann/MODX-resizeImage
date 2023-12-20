@@ -1,4 +1,4 @@
-# MODX `[[resizeImage]]` Snippet (WIP 🧑‍🏭)
+# MODX `[[!resizeImage]]` Snippet (WIP 🧑‍🏭)
 
 Snippet for resizing Images in MODX. It replaces [pThumb](https://github.com/modxcms/pThumb) in 99% of my projects, but can be used in parallel 😸
 
@@ -17,7 +17,9 @@ https://github.com/jenswittmann/MODX-resizeImage/blob/9f0cc0b3fe414526e18f46cfe6
 
 ```
 <img
-    data-srcset[[+url:resizeImage=`2000,1250,800`]]
+    data-srcset[[!resizeImage?
+        &input=`[[+url]]`
+        &options=`2000,1250,800` ]]
     alt=""
 />
 ```
@@ -37,6 +39,8 @@ Generates this:
   alt=""
 />
 ```
+
+ℹ️ Allways call the Snippet uncached, to prevent missing images when old images get deleted by the Snippet themself.
 
 ### Lazyload base64 Placeholder
 
