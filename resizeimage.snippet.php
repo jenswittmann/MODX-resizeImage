@@ -37,8 +37,9 @@ foreach (array_reverse($sizes) as $size) {
     $width = isset($dimensions[0]) ? $dimensions[0] : "";
     $height = isset($dimensions[1]) ? $dimensions[1] : "";
     $filePathInfo = pathinfo($filePath);
+    $savePathFilename = $modx->filterPathSegment($filePathInfo["filename"]);
     $savePathExtension = "." . substr(md5($filePathLast), 0, 8) . "." . $width . "x" . $height . "-" . $quality . "." . $fileExtension;
-    $savePath = $cachePath . $filePathInfo["filename"] . $savePathExtension;
+    $savePath = $cachePath . $savePathFilename . $savePathExtension;
    
     # check if base image exists
     if (!file_exists($basePath . $filePathLast) || filesize($basePath . $filePathLast) < 1) {
