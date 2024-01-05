@@ -18,13 +18,18 @@ $filePathLast = $filePath;
 $srcsets = [];
 $src = [];
 
+# if svg return
+if (mime_content_type($basePath . $filePath) === "image/svg+xml") {
+    return '="\'' . $input . '\' 100w" width="1" height="1"';
+}
+
 # original image not exists
 if (!file_exists($basePath . $filePath)) {
     if ($mode == "json") {
         return "'" . $input . "'";
     }
     if (!empty($input)) {
-        return '="' . $input . strlen($input) . '"';
+        return '="' . $input . '"';
     }
     return false;
 }
