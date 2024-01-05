@@ -20,7 +20,7 @@ $src = [];
 
 # if svg return
 if (mime_content_type($basePath . $filePath) === "image/svg+xml") {
-    return '="\'' . $input . '\' 100w" width="1" height="1"';
+    return '="' . $input . '" width="1" height="1"';
 }
 
 # original image not exists
