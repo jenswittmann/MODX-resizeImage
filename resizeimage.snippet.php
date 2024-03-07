@@ -136,12 +136,12 @@ $height = $srcsets[0]["height"];
 
 # output as json
 if ($mode == "json") {
-    return "{
-        url: '" . $input . "',
-        src: '" . implode(",", $src) . "',
-        width: " . ( $width ?? 0 ) . ",
-        height: " . ( $height ?? 0 ) . "
-    }";
+    return json_encode([
+        "url" => $input,
+        "src" => implode(",", $src),
+        "width" => $width ?? 0,
+        "height" => $height ?? 0
+    ]);
 }
 
 # output as base64
