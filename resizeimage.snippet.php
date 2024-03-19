@@ -15,6 +15,7 @@ $cultureKey = $modx->getOption("cultureKey");
 $basePath = $modx->getOption("base_path");
 $filePath = preg_replace("/^\/?" . $cultureKey . "\//i", "", $input);
 $filePathLast = $filePath;
+$filePatheIsRemote = str_starts_with($filePath, 'https');
 $srcsets = [];
 $src = [];
 
@@ -23,8 +24,13 @@ if (mime_content_type($basePath . $filePath) === "image/svg+xml") {
     return '="' . $input . '" width="1" height="1"';
 }
 
+# if remote image
+if ($filePatheIsRemote) {
+    $basePath = '';
+}
+
 # original image not exists
-if (!file_exists($basePath . $filePath)) {
+if (empty($filePath) || ( !file_exists($basePath . $filePath) && !$filePatheIsRemote )) {
     if ($mode == "json") {
         return "'" . $input . "'";
     }
