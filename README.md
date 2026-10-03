@@ -5,6 +5,8 @@ Snippet for resizing Images in MODX. It replaces [pThumb](https://github.com/mod
 ✅ Generates WebP  
 ✅ Output srcset and aspect ratio for better web vitals  
 ✅ Can use binary libs like `convert` (Imagine workaround on IONOS) and `ffmpeg` (for Videothumbnails)  
+✅ Falls back to GD (`&lib=`gd``) if Imagick is not installed  
+✅ Outputs the original image instead of an error if an image can't be generated (logged to the MODX error log)  
 ✅ Output as base64 for Lazyloading Placeholders
 
 ## Options

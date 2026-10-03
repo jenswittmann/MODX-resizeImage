@@ -19,8 +19,70 @@ $filePatheIsRemote = str_starts_with($filePath, 'https');
 $srcsets = [];
 $src = [];
 
+# fall back to GD if Imagick is not installed
+if ($lib == "Imagick" && !class_exists("Imagick")) {
+    $lib = "gd";
+}
+
+# resize with GD, crop like Imagick::cropThumbnailImage() if width and height are set
+$resizeWithGd = function ($source, $target, $width, $height, $quality, $fileExtension) {
+    $image = @imagecreatefromstring(file_get_contents($source));
+    if ($image === false) {
+        throw new \RuntimeException("GD can't read " . $source);
+    }
+
+    $sourceWidth = imagesx($image);
+    $sourceHeight = imagesy($image);
+    $width = (int) $width;
+    $height = (int) $height;
+    $cropX = 0;
+    $cropY = 0;
+    $cropWidth = $sourceWidth;
+    $cropHeight = $sourceHeight;
+
+    if ($width && $height) {
+        $scale = max($width / $sourceWidth, $height / $sourceHeight);
+        $cropWidth = (int) round($width / $scale);
+        $cropHeight = (int) round($height / $scale);
+        $cropX = (int) round(($sourceWidth - $cropWidth) / 2);
+        $cropY = (int) round(($sourceHeight - $cropHeight) / 2);
+    } elseif ($width) {
+        $height = (int) round($sourceHeight * $width / $sourceWidth);
+    } elseif ($height) {
+        $width = (int) round($sourceWidth * $height / $sourceHeight);
+    } else {
+        $width = $sourceWidth;
+        $height = $sourceHeight;
+    }
+
+    $resized = imagecreatetruecolor($width, $height);
+    imagealphablending($resized, false);
+    imagesavealpha($resized, true);
+    imagefill($resized, 0, 0, imagecolorallocatealpha($resized, 0, 0, 0, 127));
+    imagecopyresampled($resized, $image, 0, 0, $cropX, $cropY, $width, $height, $cropWidth, $cropHeight);
+
+    switch (strtolower($fileExtension)) {
+        case "webp":
+            $saved = imagewebp($resized, $target, (int) $quality);
+            break;
+        case "jpg":
+        case "jpeg":
+            $saved = imagejpeg($resized, $target, (int) $quality);
+            break;
+        case "png":
+            $saved = imagepng($resized, $target);
+            break;
+        default:
+            throw new \RuntimeException("GD can't write " . $fileExtension);
+    }
+
+    if (!$saved) {
+        throw new \RuntimeException("GD can't write " . $target);
+    }
+};
+
 # if svg return
-if (mime_content_type($basePath . $filePath) === "image/svg+xml") {
+if (function_exists("mime_content_type") && @mime_content_type($basePath . $filePath) === "image/svg+xml") {
     return '="' . $input . '" width="1" height="1"';
 }
 
@@ -63,53 +125,62 @@ foreach (array_reverse($sizes) as $size) {
         if (!is_dir($basePath . $cachePath)) {
             mkdir($basePath . $cachePath, 0755);
         } else {
-        
+
             # cleanup cache
             foreach (glob($basePath . $cachePath . "*." . $fileExtension) as $file) {
                 if (filemtime($file) < time() - (60 * 60 * 24 * 30)) {
                     unlink($file);
                 }
             }
-        
+
         }
-    
-        # generate image
-        if ($lib == "cli") {
-            
-            if ($type == "video") {
-                
-                $cmd = $libPath . " -ss 00:00:00 -i '" . $basePath . $filePathLast . "' -filter:v scale=\"" . ( $width ?? "-1" ) . ":" . ( $height ?? "-1" ) . "\" " . $basePath . $savePath;
-            
-            } else {
-            
-                $resize = "-resize " . ( $width ?? "" ) . "x" . ( $height ?? "" );
-                
-                if ($width && $height) {
-                    $resize = "-resize " . $width . "x" . $height . "^ -gravity center -extent " . $width . "x" . $height;
+
+        # generate image, on error log it and output the original image
+        try {
+            if ($lib == "cli") {
+
+                if ($type == "video") {
+
+                    $cmd = $libPath . " -ss 00:00:00 -i '" . $basePath . $filePathLast . "' -filter:v scale=\"" . ( $width ?? "-1" ) . ":" . ( $height ?? "-1" ) . "\" " . $basePath . $savePath;
+
+                } else {
+
+                    $resize = "-resize " . ( $width ?? "" ) . "x" . ( $height ?? "" );
+
+                    if ($width && $height) {
+                        $resize = "-resize " . $width . "x" . $height . "^ -gravity center -extent " . $width . "x" . $height;
+                    }
+
+                    $cmd = "export OMP_NUM_THREADS=1;"; // bugfixes IONOS resize large images, thanks to https://stackoverflow.com/a/69133237
+                    $cmd .= $libPath . " '" . $basePath . $filePathLast . "' " . $resize . "  -quality " . $quality . " '" . $basePath . $savePath . "'";
+
                 }
-                
-                $cmd = "export OMP_NUM_THREADS=1;"; // bugfixes IONOS resize large images, thanks to https://stackoverflow.com/a/69133237
-                $cmd .= $libPath . " '" . $basePath . $filePathLast . "' " . $resize . "  -quality " . $quality . " '" . $basePath . $savePath . "'";
-           
-            }
-            
-            shell_exec($cmd);
-        
-        } else {
-            
-            $image = new Imagick($basePath . $filePathLast);
-            
-            if ($width && $height) {
-                $image->cropThumbnailImage((int) $width, (int) $height);
+
+                shell_exec($cmd);
+
+            } elseif ($lib == "gd") {
+
+                $resizeWithGd($basePath . $filePathLast, $basePath . $savePath, $width, $height, $quality, $fileExtension);
+
             } else {
-                $image->thumbnailImage((int) $width, (int) $height);
+
+                $image = new Imagick($basePath . $filePathLast);
+
+                if ($width && $height) {
+                    $image->cropThumbnailImage((int) $width, (int) $height);
+                } else {
+                    $image->thumbnailImage((int) $width, (int) $height);
+                }
+
+                $image->setImageCompressionQuality($quality);
+                $image->writeImage($basePath . $savePath);
+
             }
-            
-            $image->setImageCompressionQuality($quality);
-            $image->writeImage($basePath . $savePath);
-        
+        } catch (\Throwable $e) {
+            $modx->log($modx::LOG_LEVEL_ERROR, "[resizeImage] " . $input . ": " . $e->getMessage());
+            break;
         }
-    
+
     }
         
     # get generated image    
@@ -126,9 +197,12 @@ foreach (array_reverse($sizes) as $size) {
     }
 }
 
-# no srcsets, maybe video is converting in the background i.e.
+# no srcsets, maybe video is converting in the background i.e. or the image could not be generated
 if (!count($srcsets)) {
-    return $input;
+    if ($mode == "json") {
+        return "'" . $input . "'";
+    }
+    return '="' . $input . '"';
 }
 
 # generate srcset
